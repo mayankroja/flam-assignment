@@ -12,10 +12,10 @@ import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.bookreview.R;
-import com.example.bookreview.data.Book; // Assuming your Book class is here
+import com.example.bookreview.data.Book;
 import com.example.bookreview.utils.ImageLoader;
 
-import java.util.Objects; // <-- IMPORT THIS
+import java.util.Objects;
 
 public class BookAdapter extends ListAdapter<Book, BookAdapter.BookViewHolder> {
     private final OnItemClickListener listener;
@@ -33,20 +33,16 @@ public class BookAdapter extends ListAdapter<Book, BookAdapter.BookViewHolder> {
             new DiffUtil.ItemCallback<Book>() {
                 @Override
                 public boolean areItemsTheSame(@NonNull Book oldItem, @NonNull Book newItem) {
-                    // Assuming 'id' is a primitive type like 'long' or 'int'.
-                    // If 'id' is an object (e.g., String, Long),
-                    // you should use Objects.equals(oldItem.id, newItem.id) here too.
-                    // For now, assuming it's a primitive and non-null.
                     return oldItem.id == newItem.id;
                 }
 
                 @Override
                 public boolean areContentsTheSame(@NonNull Book oldItem, @NonNull Book newItem) {
-                    // Use Objects.equals for null-safe comparison of strings
+
                     return Objects.equals(oldItem.title, newItem.title) &&
                             Objects.equals(oldItem.author, newItem.author) &&
                             Objects.equals(oldItem.imageUrl, newItem.imageUrl) &&
-                            oldItem.isFavorite == newItem.isFavorite; // isFavorite is a boolean, direct comparison is fine
+                            oldItem.isFavorite == newItem.isFavorite;
                 }
             };
 
@@ -61,7 +57,7 @@ public class BookAdapter extends ListAdapter<Book, BookAdapter.BookViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull BookViewHolder holder, int position) {
         Book book = getItem(position);
-        if (book != null) { // Good practice to check for null item from getItem()
+        if (book != null) {
             holder.bind(book, listener);
         }
     }
@@ -79,11 +75,11 @@ public class BookAdapter extends ListAdapter<Book, BookAdapter.BookViewHolder> {
         }
 
         public void bind(Book book, OnItemClickListener listener) {
-            // Consider null checks here too if data can be null and TextViews don't handle it
-            titleTextView.setText(book.title != null ? book.title : ""); // Display empty string if title is null
-            authorTextView.setText(book.author != null ? book.author : ""); // Display empty string if author is null
 
-            // ImageLoader should ideally also handle null or empty imageUrls gracefully
+            titleTextView.setText(book.title != null ? book.title : "");
+            authorTextView.setText(book.author != null ? book.author : "");
+
+
             ImageLoader.loadImage(book.imageUrl, thumbnailImageView);
 
             itemView.setOnClickListener(v -> {

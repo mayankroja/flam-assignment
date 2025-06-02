@@ -28,7 +28,7 @@ public class BookRepository {
     public BookRepository(Context context) {
         BookDatabase database = BookDatabase.getDatabase(context);
         this.bookDao = database.bookDao();
-        this.apiService = new MockApiService(); // Use mock service
+        this.apiService = new MockApiService(); // todo: mock service used currently
         this.executor = Executors.newSingleThreadExecutor();
     }
 
@@ -44,8 +44,6 @@ public class BookRepository {
     public LiveData<List<Book>> getFavoriteBooks() {
         return bookDao.getFavoriteBooks();
     }
-
-    // In BookRepository.java, modify refreshBooks():
     private void refreshBooks() {
         executor.execute(() -> {
             try {
@@ -73,22 +71,19 @@ public class BookRepository {
     }
 
     private void syncWithLocalData(List<Book> networkBooks) {
-        // Get current favorites
+
         List<Book> localBooks = bookDao.getAllBooksSync();
         Map<Integer, Book> localMap = new HashMap<>();
         for (Book book : localBooks) {
             localMap.put(book.id, book);
         }
 
-        // Update network books with local favorite status
         for (Book networkBook : networkBooks) {
             Book localBook = localMap.get(networkBook.id);
             if (localBook != null) {
                 networkBook.isFavorite = localBook.isFavorite;
             }
         }
-
-        // Save to database
         bookDao.insert(networkBooks);
     }
 

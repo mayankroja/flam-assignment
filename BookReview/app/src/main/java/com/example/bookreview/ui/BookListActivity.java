@@ -30,7 +30,6 @@ public class BookListActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Initialize adapter with click listener
         adapter = new BookAdapter(book -> {
             Intent intent = new Intent(BookListActivity.this, BookDetailActivity.class);
             intent.putExtra("BOOK_ID", book.id);
@@ -38,7 +37,6 @@ public class BookListActivity extends AppCompatActivity {
         });
         recyclerView.setAdapter(adapter);
 
-        // Initialize ViewModel
         BookRepository repository = new BookRepository(this);
         viewModel = new ViewModelProvider(
                 this,
@@ -50,7 +48,6 @@ public class BookListActivity extends AppCompatActivity {
                 }
         ).get(BookViewModel.class);
 
-        // Observe books
         viewModel.getBooks().observe(this, books -> {
             Log.d("BookListActivity", "Books received: " + books.size());
             adapter.submitList(books);

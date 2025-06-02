@@ -50,8 +50,6 @@ public class ImageLoader {
             return;
         }
 
-        // Store the original URL (even if null) in the ImageView's tag.
-        // This helps ensure that the correct image/placeholder is displayed if the ImageView is recycled.
         imageView.setTag(R.id.image_loader_tag_url, urlString);
 
         try {
@@ -65,7 +63,6 @@ public class ImageLoader {
 
         if (urlString == null || urlString.isEmpty()) {
             Log.w(TAG, "URL is null or empty. Setting error placeholder.");
-            // Pass the original (potentially null) urlString for the tag check
             setErrorImage(imageView, urlString, errorResId);
             return;
         }
@@ -79,17 +76,15 @@ public class ImageLoader {
         }
 
         executor.execute(() -> {
-            // Re-check the tag inside the executor thread before network call,
-            // as the imageView might have been recycled.
             final String currentUrlForView = (String) imageView.getTag(R.id.image_loader_tag_url);
             if (!Objects.equals(urlString, currentUrlForView)) {
-                // The ImageView has been recycled for a different URL or cleared
+
                 Log.d(TAG, "ImageView recycled or URL changed before network load for: " + urlString);
                 return;
             }
 
             try {
-                URL url = new URL(urlString); // urlString is guaranteed non-null & non-empty here
+                URL url = new URL(urlString);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setDoInput(true);
                 connection.connect();
@@ -126,15 +121,12 @@ public class ImageLoader {
     }
 
     private static Bitmap getBitmapFromMemCache(String key) {
-        if (key == null) return null; // Ensure key is not null
+        if (key == null) return null;
         return memoryCache.get(key);
     }
 
-    // urlStringForComparison is the original URL this operation was initiated for.
-    // It can be null if the original request was for a null/empty URL (error placeholder case).
     private static boolean shouldUpdateImageView(ImageView imageView, @Nullable String urlStringForComparison) {
         final Object tag = imageView.getTag(R.id.image_loader_tag_url);
-        // Use Objects.equals for null-safe comparison
         return Objects.equals(urlStringForComparison, tag);
     }
 

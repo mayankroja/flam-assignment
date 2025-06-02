@@ -40,7 +40,6 @@ public class BookDetailActivity extends AppCompatActivity {
         TextView ratingTextView = findViewById(R.id.ratingTextView);
         Button favoriteButton = findViewById(R.id.favoriteButton);
 
-        // Initialize ViewModel
         BookRepository repository = new BookRepository(this);
         viewModel = new ViewModelProvider(
                 this,
@@ -52,7 +51,6 @@ public class BookDetailActivity extends AppCompatActivity {
                 }
         ).get(BookViewModel.class);
 
-        // Observe book details
         viewModel.getBookById(bookId).observe(this, book -> {
             if (book != null) {
                 currentBook = book;

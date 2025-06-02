@@ -32,7 +32,6 @@ class LRUCache:
         self._add_node(node)
 
     def _pop_tail(self):
-        """Remove and return least recently used node"""
         node = self.tail.prev
         self._remove_node(node)
         return node
@@ -41,7 +40,7 @@ class LRUCache:
         if key not in self.cache:
             return -1
         node = self.cache[key]
-        self._move_to_head(node)  # Mark as recently used
+        self._move_to_head(node)
         return node.value
 
     def put(self, key: int, value: int) -> None:
@@ -56,3 +55,14 @@ class LRUCache:
             new_node = Node(key, value)
             self.cache[key] = new_node
             self._add_node(new_node)
+
+lru = LRUCache(2)
+lru.put(1, 1)
+lru.put(2, 2)
+print(lru.get(1)) 
+lru.put(3, 3)
+print(lru.get(2))  
+lru.put(4, 4)
+print(lru.get(1)) 
+print(lru.get(3))  
+print(lru.get(4))  

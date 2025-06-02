@@ -75,3 +75,13 @@ class HashMap:
         for pair in self.map:
             if pair:
                 print(pair.key, pair.val)
+    
+hmap = HashMap()
+hmap.put("a", 10)
+hmap.put("b", 20)
+print(hmap.get("a"))
+print(hmap.get("c")) 
+hmap.put("b", 30)
+print(hmap.get("b"))  
+hmap.remove("b")
+print(hmap.get("b"))  

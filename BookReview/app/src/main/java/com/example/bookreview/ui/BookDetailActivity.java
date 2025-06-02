@@ -51,6 +51,7 @@ public class BookDetailActivity extends AppCompatActivity {
                 }
         ).get(BookViewModel.class);
 
+
         viewModel.getBookById(bookId).observe(this, book -> {
             if (book != null) {
                 currentBook = book;
@@ -58,7 +59,12 @@ public class BookDetailActivity extends AppCompatActivity {
                 authorTextView.setText(book.author);
                 descriptionTextView.setText(book.description);
                 ratingTextView.setText(String.format("Rating: %.1f", book.rating));
-                ImageLoader.loadImage(book.imageUrl, imageView);
+                ImageLoader.loadImage(
+                        book.imageUrl,
+                        imageView,
+                        R.drawable.placeholder,       // placeholder image while loading
+                        R.drawable.error_placeholder  // fallback if image fails
+                );
                 favoriteButton.setText(book.isFavorite ? "Remove Favorite" : "Add Favorite");
                 progressBar.setVisibility(View.GONE);
             }

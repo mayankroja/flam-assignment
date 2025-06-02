@@ -8,7 +8,7 @@ import android.util.Log;
 import android.widget.ImageView;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.Nullable; // Import Nullable
+import androidx.annotation.Nullable;
 import androidx.collection.LruCache;
 
 import com.example.bookreview.R;
@@ -16,17 +16,19 @@ import com.example.bookreview.R;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.Objects; // Import Objects for equals
 
 public class ImageLoader {
     private static final String TAG = "ImageLoader";
-    private static final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    private static final ExecutorService executor =
+            Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private static final LruCache<String, Bitmap> memoryCache;
     private static final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
 
     static {
+        // Use 1/8th of available memory for cache
         final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
         final int cacheSize = maxMemory / 8;
         memoryCache = new LruCache<String, Bitmap>(cacheSize) {
@@ -37,118 +39,95 @@ public class ImageLoader {
         };
     }
 
-    private static final @DrawableRes int DEFAULT_PLACEHOLDER = R.drawable.placeholder;
-    private static final @DrawableRes int DEFAULT_ERROR_PLACEHOLDER = R.drawable.error_placeholder;
-
-    public static void loadImage(final String urlString, final ImageView imageView) {
-        loadImage(urlString, imageView, DEFAULT_PLACEHOLDER, DEFAULT_ERROR_PLACEHOLDER);
-    }
-
-    public static void loadImage(@Nullable final String urlString, final ImageView imageView, // Allow urlString to be nullable
-                                 @DrawableRes int placeholderResId, @DrawableRes int errorResId) {
-        if (imageView == null) {
-            return;
-        }
-
+    /**
+     * Public entry point to load an image from a URL (or show an error placeholder).
+     *
+     * @param urlString        The HTTP/HTTPS URL to fetch; can be null/empty.
+     * @param imageView        The ImageView to populate.
+     * @param placeholderResId Drawable resource ID for placeholder image.
+     * @param errorResId       Drawable resource ID for error image.
+     */
+    public static void loadImage(
+            @Nullable final String urlString,
+            final ImageView imageView,
+            @DrawableRes int placeholderResId,
+            @DrawableRes int errorResId
+    ) {
+        // 1. Immediately tag the ImageView
         imageView.setTag(R.id.image_loader_tag_url, urlString);
 
+        // 2. Show placeholder right away
         try {
             imageView.setImageResource(placeholderResId);
         } catch (Exception e) {
             Log.e(TAG, "Failed to set placeholder resource: " + placeholderResId, e);
-            try {
-                imageView.setImageResource(android.R.drawable.ic_menu_gallery);
-            } catch (Exception ignored) {}
         }
 
+        // 3. If URL is empty or null, show error and bail
         if (urlString == null || urlString.isEmpty()) {
-            Log.w(TAG, "URL is null or empty. Setting error placeholder.");
             setErrorImage(imageView, urlString, errorResId);
             return;
         }
 
-        Bitmap cachedBitmap = getBitmapFromMemCache(urlString);
+        // 4. Check in-memory cache first
+        Bitmap cachedBitmap = memoryCache.get(urlString);
         if (cachedBitmap != null) {
-            if (shouldUpdateImageView(imageView, urlString)) { // urlString is non-null here
+            // Make sure the ImageView still wants this URL
+            if (Objects.equals(imageView.getTag(R.id.image_loader_tag_url), urlString)) {
                 imageView.setImageBitmap(cachedBitmap);
             }
             return;
         }
 
+        // 5. Otherwise, fetch from network on background thread
         executor.execute(() -> {
-            final String currentUrlForView = (String) imageView.getTag(R.id.image_loader_tag_url);
-            if (!Objects.equals(urlString, currentUrlForView)) {
-
-                Log.d(TAG, "ImageView recycled or URL changed before network load for: " + urlString);
+            // a) Confirm tag hasn’t changed before downloading
+            String currentTag = (String) imageView.getTag(R.id.image_loader_tag_url);
+            if (!Objects.equals(currentTag, urlString)) {
                 return;
             }
 
+            Bitmap downloaded = null;
             try {
                 URL url = new URL(urlString);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setDoInput(true);
-                connection.connect();
-                InputStream input = connection.getInputStream();
-                Bitmap bitmap = BitmapFactory.decodeStream(input);
-                connection.disconnect();
-
-                if (bitmap != null) {
-                    addBitmapToMemoryCache(urlString, bitmap);
-                    mainThreadHandler.post(() -> {
-                        if (shouldUpdateImageView(imageView, urlString)) {
-                            imageView.setImageBitmap(bitmap);
-                        }
-                    });
-                } else {
-                    Log.w(TAG, "Bitmap could not be decoded from URL: " + urlString);
-                    setErrorImageOnMainThread(imageView, urlString, errorResId);
-                }
-            } catch (OutOfMemoryError oom) {
-                Log.e(TAG, "OutOfMemoryError while loading image: " + urlString, oom);
-                memoryCache.evictAll();
-                setErrorImageOnMainThread(imageView, urlString, errorResId);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setDoInput(true);
+                conn.connect();
+                InputStream input = conn.getInputStream();
+                downloaded = BitmapFactory.decodeStream(input);
+                conn.disconnect();
             } catch (Exception e) {
-                Log.e(TAG, "Error loading image: " + urlString, e);
-                setErrorImageOnMainThread(imageView, urlString, errorResId);
+                Log.e(TAG, "Network error fetching " + urlString, e);
+            }
+
+            if (downloaded != null) {
+                // Cache it
+                memoryCache.put(urlString, downloaded);
+
+                // a. Post result to UI thread if tag still matches
+                Bitmap finalDownloaded = downloaded;
+                mainThreadHandler.post(() -> {
+                    if (Objects.equals(imageView.getTag(R.id.image_loader_tag_url), urlString)) {
+                        imageView.setImageBitmap(finalDownloaded);
+                    }
+                });
+            } else {
+                // b. On decode failure or any exception, show error placeholder
+                mainThreadHandler.post(() -> {
+                    setErrorImage(imageView, urlString, errorResId);
+                });
             }
         });
     }
 
-    private static void addBitmapToMemoryCache(String key, Bitmap bitmap) {
-        if (getBitmapFromMemCache(key) == null && bitmap != null && key !=null) { // Ensure key is not null
-            memoryCache.put(key, bitmap);
-        }
-    }
-
-    private static Bitmap getBitmapFromMemCache(String key) {
-        if (key == null) return null;
-        return memoryCache.get(key);
-    }
-
-    private static boolean shouldUpdateImageView(ImageView imageView, @Nullable String urlStringForComparison) {
-        final Object tag = imageView.getTag(R.id.image_loader_tag_url);
-        return Objects.equals(urlStringForComparison, tag);
-    }
-
-    private static void setErrorImageOnMainThread(ImageView imageView, @Nullable String urlStringForTag, @DrawableRes int errorResId) {
-        mainThreadHandler.post(() -> setErrorImage(imageView, urlStringForTag, errorResId));
-    }
-
-    private static void setErrorImage(ImageView imageView, @Nullable String urlStringForTag, @DrawableRes int errorResId) {
-        if (shouldUpdateImageView(imageView, urlStringForTag)) { // urlStringForTag can be null here
+    private static void setErrorImage(ImageView imageView, String tagForUrl, @DrawableRes int errorResId) {
+        // Only set error if tag still matches (otherwise this View got recycled)
+        if (Objects.equals(imageView.getTag(R.id.image_loader_tag_url), tagForUrl)) {
             try {
                 imageView.setImageResource(errorResId);
             } catch (Exception e) {
-                Log.e(TAG, "Failed to set error resource: " + errorResId, e);
-                try {
-                    imageView.setImageResource(android.R.drawable.ic_dialog_alert);
-                } catch (Exception ex) {
-                    Log.e(TAG, "Failed to set system fallback error icon.", ex);
-                    imageView.setImageDrawable(null);
-                }
+                Log.e(TAG, "Failed to set error placeholder: " + errorResId, e);
             }
-        } else {
-            Log.d(TAG, "ImageView recycled or URL changed before setting error placeholder for (original): " + urlStringForTag);
         }
     }
 }

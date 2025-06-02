@@ -22,7 +22,19 @@ public class BookResponse {
     @SerializedName("image_url")
     public String imageUrl;
 
-    public BookResponse(int i, String cleanCode, String s, String s1, float v, String url) {
+    public BookResponse(int id,
+                        String title,
+                        String author,
+                        String description,
+                        float rating,
+                        String imageUrl)
+    {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.description = description;
+        this.rating = rating;
+        this.imageUrl = imageUrl;
     }
 
     public Book toBook() {

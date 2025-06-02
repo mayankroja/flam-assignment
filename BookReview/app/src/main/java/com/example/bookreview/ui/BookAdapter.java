@@ -15,7 +15,7 @@ import com.example.bookreview.R;
 import com.example.bookreview.data.Book;
 import com.example.bookreview.utils.ImageLoader;
 
-import java.util.Objects;
+import java.util.Objects;  // <-- import this
 
 public class BookAdapter extends ListAdapter<Book, BookAdapter.BookViewHolder> {
     private final OnItemClickListener listener;
@@ -38,11 +38,11 @@ public class BookAdapter extends ListAdapter<Book, BookAdapter.BookViewHolder> {
 
                 @Override
                 public boolean areContentsTheSame(@NonNull Book oldItem, @NonNull Book newItem) {
-
-                    return Objects.equals(oldItem.title, newItem.title) &&
-                            Objects.equals(oldItem.author, newItem.author) &&
-                            Objects.equals(oldItem.imageUrl, newItem.imageUrl) &&
-                            oldItem.isFavorite == newItem.isFavorite;
+                    // Use Objects.equals(...) to avoid NPE when title or author is null
+                    return oldItem.id == newItem.id
+                            && oldItem.isFavorite == newItem.isFavorite
+                            && Objects.equals(oldItem.title, newItem.title)
+                            && Objects.equals(oldItem.author, newItem.author);
                 }
             };
 
@@ -58,7 +58,16 @@ public class BookAdapter extends ListAdapter<Book, BookAdapter.BookViewHolder> {
     public void onBindViewHolder(@NonNull BookViewHolder holder, int position) {
         Book book = getItem(position);
         if (book != null) {
-            holder.bind(book, listener);
+            holder.titleTextView.setText(book.title);
+            holder.authorTextView.setText(book.author);
+            ImageLoader.loadImage(
+                    book.imageUrl,
+                    holder.thumbnailImageView,
+                    R.drawable.placeholder,
+                    R.drawable.error_placeholder
+            );
+
+            holder.itemView.setOnClickListener(v -> listener.onItemClick(book));
         }
     }
 
@@ -69,18 +78,19 @@ public class BookAdapter extends ListAdapter<Book, BookAdapter.BookViewHolder> {
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
-            titleTextView = itemView.findViewById(R.id.titleTextView);
-            authorTextView = itemView.findViewById(R.id.authorTextView);
+            titleTextView     = itemView.findViewById(R.id.titleTextView);
+            authorTextView    = itemView.findViewById(R.id.authorTextView);
             thumbnailImageView = itemView.findViewById(R.id.thumbnailImageView);
         }
 
         public void bind(Book book, OnItemClickListener listener) {
+            titleTextView.setText(
+                    book.title != null ? book.title : "Unknown Title"
+            );
+            authorTextView.setText(
+                    book.author != null ? book.author : "Unknown Author"
+            );
 
-            titleTextView.setText(book.title != null ? book.title : "");
-            authorTextView.setText(book.author != null ? book.author : "");
-
-
-            ImageLoader.loadImage(book.imageUrl, thumbnailImageView);
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {

@@ -8,11 +8,16 @@ import androidx.room.PrimaryKey;
 public class Book {
     @PrimaryKey
     public int id;
-
+    @ColumnInfo(name = "title")
     public String title;
+    @ColumnInfo(name = "author")
     public String author;
+    @ColumnInfo(name = "description")
     public String description;
+
+    @ColumnInfo(name = "rating")
     public float rating;
+    @ColumnInfo(name = "image_url")
     public String imageUrl;
 
     @ColumnInfo(name = "is_favorite")

@@ -14,10 +14,31 @@ public class MockApiService implements ApiService {
         List<BookResponse> books = new ArrayList<>();
         books.add(new BookResponse(1, "Clean Code", "Robert C. Martin",
                 "A handbook of agile software craftsmanship", 4.7f,
-                "https://picsum.photos/seed/picsum/200/300"));
+                "https://picsum.photos/id/237/200/300"));
         books.add(new BookResponse(2, "Design Patterns", "Erich Gamma",
                 "Elements of reusable object-oriented software", 4.5f,
-                "https://picsum.photos/seed/picsum/200/300"));
+                "https://picsum.photos/id/237/200/300"));
+        books.add(new BookResponse(3, "Design Patterns", "Erich Gamma",
+                "Elements of reusable object-oriented software", 4.5f,
+                "https://picsum.photos/id/237/200/300"));
+        books.add(new BookResponse(4, "Design Patterns", "Erich Gamma",
+                "Elements of reusable object-oriented software", 4.5f,
+                "https://picsum.photos/id/237/200/300"));
+        books.add(new BookResponse(5, "Design Patterns", "Erich Gamma",
+                "Elements of reusable object-oriented software", 4.5f,
+                "https://picsum.photos/id/237/200/300"));
+        books.add(new BookResponse(6, "Design Patterns", "Erich Gamma",
+                "Elements of reusable object-oriented software", 4.5f,
+                "https://picsum.photos/id/237/200/300"));
+        books.add(new BookResponse(7, "Design Patterns", "Erich Gamma",
+                "Elements of reusable object-oriented software", 4.5f,
+                "https://picsum.photos/id/237/200/300"));
+        books.add(new BookResponse(8, "Design Patterns", "Erich Gamma",
+                "Elements of reusable object-oriented software", 4.5f,
+                "https://picsum.photos/id/237/200/300"));
+        books.add(new BookResponse(9, "Design Patterns", "Erich Gamma",
+                "Elements of reusable object-oriented software", 4.5f,
+                "https://picsum.photos/id/237/200/300"));
         Log.d("mockapiservice", "getBooks: "+books);
         return Calls.response(books);
     }
